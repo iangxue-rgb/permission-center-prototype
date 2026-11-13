@@ -8418,7 +8418,7 @@ let PERM_GRANTS = [
   { id:'QX-2026-1106-0005', name:'王芳', dept:'技术部', appKey:'ad-platform-data', status:'已完成', node:'已结束', processor:'—', applyTime:'2026-11-06 15:34', expireTime:'—', reason:'需核对广告投放效果数据。', history:[['员工提交申请','王芳','2026-11-06 15:34','申请已提交'],['BP审核','郭浩','2026-11-06 15:51','同意并转交权限负责人'],['权限负责人处理','陈敏','2026-11-06 17:03','已开通并通知申请人']] }
 ];
 
-function applyLedgerRecoveryState(record,grant){record.employeeId=grant.employeeId||record.employeeId||'';record.recoveryStatus=grant.recovered?'已回收':grant.notified?'待回收':'';record.recoveryDate=grant.recoveryDate||'';record.recoveryNotifiedAt=grant.notifiedAt||'';record.recoveryOwner=grant.owner||pcAppByKey(record.appKey)?.systemRecycler||pcAppByKey(record.appKey)?.owner||'';record.recovered=grant.recovered===true}
+function applyLedgerRecoveryState(record,grant){record.employeeId=grant.employeeId||record.employeeId||'';record.recoveryStatus=grant.recovered?'已回收':grant.notified?'待回收':'';record.recoveryDate=grant.recoveryDate||'';record.recoveryNotifiedAt=grant.notifiedAt||'';record.recoveryOwner=grant.owner||pcAppByKey(record.appKey)?.systemRecycler||pcAppByKey(record.appKey)?.owner||'';record.recovered=grant.recovered===true;record.recoveryConfirmedAt=grant.recovered===true?(grant.recoveryConfirmedAt||''):''}
 function ensureLedgerGrantRequests(grants){
   if(!Array.isArray(grants))return;
   let sequence=1001;
@@ -8834,7 +8834,7 @@ if(typeof renderTodos==='function')renderTodos(budActiveTodoTab())
       const applicants=USERS.filter(user=>user.name===record.name);
       const applicant=applicants.find(user=>userDept(user)===record.dept)||applicants[0];
       const app=PERM_APPS.find(item=>item.key===record.appKey);
-      return{id:record.id,appName:record.appNameSnapshot||app?.name||'',appKey:record.appKey,applicantName:record.name,department:record.dept,employeeId:record.employeeId||applicant?.id||'',status:record.status,applyTime:record.applyTime||'',recoveryStatus:record.recoveryStatus||'',recovered:record.recovered===true,recoveryDate:record.recoveryDate||'',recoveryOwner:record.recoveryOwner||app?.systemRecycler||app?.owner||''};
+      return{id:record.id,appName:record.appNameSnapshot||app?.name||'',appKey:record.appKey,applicantName:record.name,department:record.dept,employeeId:record.employeeId||applicant?.id||'',status:record.status,applyTime:record.applyTime||'',recoveryStatus:record.recoveryStatus||'',recovered:record.recovered===true,recoveryDate:record.recoveryDate||'',recoveryConfirmedAt:record.recoveryConfirmedAt||'',recoveryOwner:record.recoveryOwner||app?.systemRecycler||app?.owner||''};
     });
     const actedRequests=PERM_GRANTS.flatMap(record=>{
       const applicant=USERS.filter(user=>user.name===record.name).find(user=>userDept(user)===record.dept)||USERS.find(user=>user.name===record.name);
@@ -8845,7 +8845,7 @@ if(typeof renderTodos==='function')renderTodos(budActiveTodoTab())
       }).sort((a,b)=>String(b[2]).localeCompare(String(a[2])));
       if(!events.length)return[];
       const action=events[0],actionName=String(action[0]||''),stage=/BP审核/.test(actionName)?'BP审核':/权限负责人/.test(actionName)?'权限负责人处理':/拒绝/.test(actionName)?'审批处理':'权限负责人处理';
-      const completedEvent=(record.history||[]).filter(event=>{const eventStage=String(event[0]||''),eventNote=String(event[3]||'');return !/拒绝/.test(eventStage+' '+eventNote)&&/权限负责人处理|权限开通完成|权限申请完成/.test(eventStage)&&/开通|完成/.test(eventStage+' '+eventNote)}).sort((a,b)=>String(b[2]||'').localeCompare(String(a[2]||'')))[0];const openedAt=record.status==='已完成'?(String(completedEvent?.[2]||'').slice(0,10)||'—'):'—';return[{id:record.id,employeeId:record.employeeId||applicant?.id||'',applicantName:record.name,department:record.dept,appName:record.appNameSnapshot||app?.name||'权限申请',status:record.status||'处理中',openedAt,recoveryDate:record.recoveryDate||'',permissionOwner:app?.systemRecycler||app?.owner||'',handledAt:action[2]||'',handledStage:stage,actionResult:/拒绝/.test(String(action[0]||'')+' '+String(action[3]||''))?'拒绝':'同意'}];
+      const completedEvent=(record.history||[]).filter(event=>{const eventStage=String(event[0]||''),eventNote=String(event[3]||'');return !/拒绝/.test(eventStage+' '+eventNote)&&/权限负责人处理|权限开通完成|权限申请完成/.test(eventStage)&&/开通|完成/.test(eventStage+' '+eventNote)}).sort((a,b)=>String(b[2]||'').localeCompare(String(a[2]||'')))[0];const openedAt=record.status==='已完成'?(String(completedEvent?.[2]||'').slice(0,10)||'—'):'—';return[{id:record.id,employeeId:record.employeeId||applicant?.id||'',applicantName:record.name,department:record.dept,appName:record.appNameSnapshot||app?.name||'权限申请',status:record.status||'处理中',recoveryStatus:record.recoveryStatus||'',recovered:record.recovered===true,openedAt,recoveryDate:record.recoveryDate||'',recoveryConfirmedAt:record.recoveryConfirmedAt||'',permissionOwner:app?.systemRecycler||app?.owner||'',handledAt:action[2]||'',handledStage:stage,actionResult:/拒绝/.test(String(action[0]||'')+' '+String(action[3]||''))?'拒绝':'同意'}];
     });
     ledgerFrame.contentWindow.postMessage({type:'ledger-import-sources',employees,permissions:permissionApplications,requests,actedRequests,viewer},'*');
   }
